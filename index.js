@@ -4,8 +4,10 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 const cors = require('cors');
+const URL = require('url').URL;
 
 const { RoutineModel } = require('./models/Routine');
+const { ToolModel } = require('./models/Tool');
 
 main();
 
@@ -17,6 +19,15 @@ async function main() {
     }
 }
 
+const urlValidation = (s) => {
+    try {
+        new URL(s);
+        return true;
+    } catch (err) {
+        return false;
+    }
+};
+
 app.use(cors())
 app.use(bodyParser.urlencoded({extended:true}))
 
@@ -26,7 +37,11 @@ app.get('/', async (req, res) => {
         res.send('No result');
     }
     res.json(routines);
-    // res.send('This is index page, will display all routine')
+})
+
+app.get('/api/routine', async (req, res) => {
+    let routines = await RoutineModel.find();
+    res.json(routines);
 })
 
 app.post('/api/routine', async (req, res) => {
@@ -37,7 +52,25 @@ app.post('/api/routine', async (req, res) => {
     } catch(err){
         res.json({err: err})
     }
-    // res.json(req.body);
+})
+
+// Get all available brewing tools
+app.get('/api/tool', async (req, res) => {
+    let tools = await ToolModel.find();
+    res.json(tools);
+})
+
+// Add new brewing tool
+app.post('/api/tool', async (req, res) => {
+    let data = req.body
+    if(data.productLink){
+        if(!urlValidation(data.productLink)){
+            return  res.json({err:"URL provided not valid"})
+        }
+    }
+    let newTool = new ToolModel(data);
+    await newTool.save();
+    res.json(newTool);
 })
 
 app.listen(3000, () => {
