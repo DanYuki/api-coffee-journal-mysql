@@ -8,6 +8,7 @@ const URL = require('url').URL;
 
 const { RoutineModel } = require('./models/Routine');
 const { ToolModel } = require('./models/Tool');
+const {CoffeeModel} = require('./models/Coffee');
 
 main();
 
@@ -72,6 +73,19 @@ app.post('/api/tool', async (req, res) => {
     await newTool.save();
     res.json(newTool);
 })
+
+app.get('/api/coffee', async (req, res) => {
+    let coffees = await CoffeeModel.find();
+    res.json(coffees);
+});
+
+app.post('/api/coffee', async (req, res) => {
+    let data = req.body;
+    let newCoffee = new CoffeeModel(data);
+
+    await newCoffee.save();
+    res.json(newCoffee);
+});
 
 app.listen(3000, () => {
     console.log(`App is listening on 3000`);
