@@ -43,15 +43,33 @@ app.get('/', (req, res) => {
 //     res.json(routines);
 // })
 
-// app.post('/api/routine', async (req, res) => {
-//     let newRoutine = new RoutineModel(req.body)
-//     try {
-//         await newRoutine.save()
-//         res.json(newRoutine)
-//     } catch(err){
-//         res.json({err: err})
-//     }
-// })
+app.post('/api/routine', async (req, res) => {
+    let formData = {
+        water_weight: Number(req.body.water_weight),
+        coffee_weight: req.body.coffee_weight,
+        coffee_id: req.body.coffee_id,
+        water_temperature: req.body.water_temperature,
+        brew_time: req.body.brew_time,
+        notes: req.body.notes,
+    }
+
+    // Change the tasteProfile from json into normal text instead. Make it more like description I guess
+    db.query(`INSERT INTO routine(water_weight, coffee_weight, coffee_id, water_temperature, brew_time, notes) VALUES (?)`, formData, (err, rows) => {
+        if (err) {
+            return res.status(500).json({
+                status: false,
+                message: err,
+                data: req.body
+            })
+        } else {
+            return res.status(200).json({
+                status: true,
+                message: 'Insert data succesful',
+                data: rows
+            })
+        }
+    })
+})
 
 // // Get all available brewing tools
 // app.get('/api/tool', async (req, res) => {
@@ -89,6 +107,23 @@ app.get('/api/coffee', (req, res) => {
     })
 });
 
+app.get('/api/coffee/:coffee_id', (req, res) => {
+    db.query(`SELECT * FROM coffee WHERE coffee_id=${req.params.coffee_id}`, (err, rows) => {
+        if(err){
+            return res.status(500).json({
+                status: false,
+                message: err,
+            })
+        } else{
+            return res.status(200).json({
+                status: true,
+                message: 'Coffees',
+                data: rows
+            })
+        }
+    })
+})
+
 app.post('/api/coffee', (req, res) => {
     let formData = {
         coffee_name: req.body.coffee_name,
@@ -112,11 +147,55 @@ app.post('/api/coffee', (req, res) => {
             return res.status(200).json({
                 status: true,
                 message: 'Insert data succesful',
-                data: req.body
+                data: rows
             })
         }
     })
 });
+
+app.patch('/api/coffee/:coffee_id', (req, res) => {
+    let formData = {
+        coffee_name: req.body.coffee_name,
+        bought_date: moment(req.body.bought_date).format('YYYY-MM-DD'),
+        roast_type: req.body.roast_type,
+        tasteProfile: req.body.tasteProfile,
+        price: req.body.price,
+        product_link: req.body.product_link ? req.body.product_link : '',
+        weight: req.body.weight
+    }
+
+    db.query(`UPDATE coffee SET coffee_name = "${formData.coffee_name}", bought_date = "${formData.bought_date}", roast_type = "${formData.roast_type}", tasteProfile = "${formData.tasteProfile}", price = ${formData.price}, product_link = "${formData.product_link}", weight = ${formData.weight} WHERE coffee_id = ${req.params.coffee_id}`, (err, rows) => {
+        if(err) {
+            return res.status(500).json({
+                status: false,
+                message: err
+            })
+        } else {
+            return res.status(200).json({
+                status: true,
+                message: 'Data updated!',
+                data: rows
+            })
+        }
+    })
+})
+
+app.delete('/api/coffee/:coffee_id', (req, res) => {
+    db.query(`DELETE FROM coffee WHERE coffee_id = ${req.params.coffee_id}`, (err, result) => {
+        if(err){
+            return res.status(500).json({
+                status: false,
+                message: err
+            })
+        } else {
+            return res.status(200).json({
+                status: true,
+                message: "Rows deleted",
+                data: result
+            })
+        }
+    })
+})
 
 app.listen(3000, () => {
     console.log(`App is listening on 3000`);
